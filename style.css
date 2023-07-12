@@ -1,0 +1,28 @@
+body {
+    font-family: Georgia, serif;
+    background-color: #c76b6b;
+}
+
+.centrePosition {
+    margin-left: auto;
+    margin-right: auto;
+    display: table;
+    justify-content: center;
+    align-items: center;
+}
+
+.fullScreen{
+    width: 100%;
+}
+
+.centreText{
+    text-align: center;
+}
+
+table,
+th,
+td,
+tr {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
