@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="initial-scale=1.0">
+    <title>Picker</title>
+    <style>
+        body {
+            background: #FFF;
+            color: #000;
+            font-family: verdana, sans-serif;
+            font-size: 10pt;
+            margin: 0;
+            padding: 10px;
+        }
+
+        a:link,
+        a:visited {
+            color: #008;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        a:active,
+        a:hover {
+            color: #ACF;
+        }
+
+        .info {
+            font-weight: bold;
+        }
+
+        button {
+            font-family: inherit;
+            cursor: pointer;
+            border: 0;
+            border-radius: 3px;
+            padding: 0.3em 0.5em;
+            background: #CCC;
+            color: #000;
+        }
+
+        button:hover {
+            background: #DDD;
+        }
+
+        button.disabled {
+            background: #DDD;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        button.disabled:hover {
+            background: #DDD;
+        }
+
+        #container {
+            position: relative;
+            margin-left: -10px;
+            margin-right: -10px;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        @media (min-width:1024px) {
+
+            /* Put the found favorites beside the picking div when the window is sufficiently large */
+            #picking {
+                float: left;
+                width: 636px;
+            }
+
+            #secondary {
+                margin-left: 646px;
+            }
+        }
+
+        @media (min-width:1300px) {
+
+            /* Once we get to the point where 636px is less than half of the width of the screen, make the picking div just take up half */
+            #picking {
+                width: 50%;
+            }
+
+            #secondary {
+                margin-left: 51%;
+            }
+        }
+
+        #pick {
+            background: #58F;
+            color: #FFF;
+            font-size: larger;
+            font-weight: bold;
+            width: 6em;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+
+        #pick.disabled {
+            background: #ACF;
+        }
+
+        #pick:hover {
+            background: #ACF;
+        }
+
+        .item-list {
+            padding: 0;
+            list-style-type: none;
+            line-height: 100px;
+        }
+
+        .item-list li {
+            margin: 0;
+            display: inline-block;
+            height: 100px;
+            width: 100px;
+            line-height: 100px;
+            border: 3px solid transparent;
+            text-align: center;
+            position: relative;
+            vertical-align: top;
+            overflow: hidden;
+            border-radius: 100%;
+            background: #F7F7F7;
+            color: #000;
+        }
+
+        .item-list li img {
+            vertical-align: middle;
+            max-height: 100%;
+            max-width: 100%;
+        }
+
+        .item-list li span {
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 1.2;
+        }
+
+        @media (max-width:636px) {
+            .item-list {
+                line-height: 75px;
+            }
+
+            .item-list li {
+                line-height: 75px;
+                height: 75px;
+                width: 75px;
+            }
+        }
+
+        @media (max-width:423px) {
+            .item-list {
+                line-height: 50px;
+            }
+
+            .item-list li {
+                line-height: 50px;
+                height: 50px;
+                width: 50px;
+            }
+        }
+
+        #evaluating li {
+            cursor: pointer;
+        }
+
+        #favorites li {
+            cursor: move;
+        }
+
+        .item-list li:hover {
+            background: #CDF;
+        }
+
+        .item-list.sorting li:hover {
+            background: #F7F7F7;
+        }
+
+        #evaluating li.selected {
+            border: 3px solid #7AC;
+        }
+
+        #evaluating,
+        #buttons {
+            text-align: center;
+            margin: auto;
+        }
+
+        #evaluating li.notice {
+            width: auto;
+            height: auto;
+            max-width: 260px;
+            margin: auto;
+            background: #F7F7F7;
+            border-radius: 10px;
+            padding: 30px 30px;
+            color: #000;
+            text-align: center;
+            line-height: 1.4;
+            cursor: auto;
+            font-size: 10pt;
+        }
+
+        #buttons {
+            margin-top: 30px;
+            position: relative;
+            z-index: 3;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Picker</h1>
+
+    <p>You can include any content you want here.</p>
+
+    <div id="container">
+
+        <div id="picking">
+            <ul id="evaluating" class="item-list">
+            </ul>
+
+            <p id="buttons"><button id="pick">Pick</button> <button id="pass">Pass</button> <button
+                    id="undo">Undo</button> <button id="redo">Redo</button></p>
+        </div>
+
+        <div id="secondary">
+            <h2>Found favorites</h2>
+
+            <ol id="favorites" class="item-list">
+            </ol>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script src="picker.js"></script>
+    <script src="picker-ui.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+    <script>
+        'use strict';
+
+        var items = [
+            { id: 'Tim McGraw' },
+            { id: 'Teardrops on My Guitar' },
+            { id: 'Picture to Burn' },
+            { id: 'A Place in This World' },
+            { id: 'Cold as You' },
+            { id: 'The Outside' },
+            { id: 'Tied Together with a Smile' },
+            { id: 'Stay Beautiful' },
+            { id: 'Should\'ve Said No' },
+            { id: 'Mary\'s Song (Oh My My My)' },
+            { id: 'Our Song' },
+            { id: 'I\'m Only Me When I\'m With You' },
+            { id: 'Invisible' },
+            { id: 'A Perfectly Good Heart' },
+            { id: 'Fearless' },
+            { id: 'Fifteen' },
+            { id: 'Love Story' },
+            { id: 'Hey Stephen' },
+            { id: 'White Horse' },
+            { id: 'You Belong with Me' },
+            { id: 'Breathe' },
+            { id: 'Tell Me Why' },
+            { id: 'You\'re Not Sorry' },
+            { id: 'The Way I Loved You' },
+            { id: 'Forever & Always' },
+            { id: 'The Best Day' },
+            { id: 'Change' },
+            { id: 'Jump Then Fall' },
+            { id: 'Untouchable' },
+            { id: 'Come in with the Rain' },
+            { id: 'Superstar' },
+            { id: 'The Other Side of the Door' },
+            { id: 'Today Was a Fairytale' },
+            { id: 'You All Over Me' },
+            { id: 'Mr. Perfectly Fine' },
+            { id: 'We Were Happy' },
+            { id: 'That\'s When' },
+            { id: 'Don\'t You' },
+            { id: 'Bye Bye Baby' },
+            { id: 'Mine' },
+            { id: 'Sparks Fly' },
+            { id: 'Back to December' },
+            { id: 'Speak Now' },
+            { id: 'Dear John' },
+            { id: 'Mean' },
+            { id: 'The Story of Us' },
+            { id: 'Never Grow Up' },
+            { id: 'Enchanted' },
+            { id: 'Better Than Revenge' },
+            { id: 'Innocent' },
+            { id: 'Haunted' },
+            { id: 'Last Kiss' },
+            { id: 'Long Live' },
+            { id: 'Ours' },
+            { id: 'If This Was a Movie' },
+            { id: 'Superman' },
+            { id: 'Electric Touch' },
+            { id: 'When Emma Falls in Love' },
+            { id: 'I Can See You' },
+            { id: 'Castles Crumbling' },
+            { id: 'Foolish One' },
+            { id: 'Timeless' },
+            { id: 'State of Grace' },
+            { id: 'Red' },
+            { id: 'Treacherous' },
+            { id: 'I Knew You Were Trouble' },
+            { id: 'All Too Well' },
+            { id: '22' },
+            { id: 'I Almost Do' },
+            { id: 'We Are Never Ever Getting Back Together' },
+            { id: 'Stay Stay Stay' },
+            { id: 'The Last Time' },
+            { id: 'Holy Ground' },
+            { id: 'Sad Beautiful Tragic' },
+            { id: 'The Lucky One' },
+            { id: 'Everything Has Changed' },
+            { id: 'Starlight' },
+            { id: 'Begin Again' },
+            { id: 'The Moment I Knew' },
+            { id: 'Come Back...Be Here' },
+            { id: 'Girl At Home' },
+            { id: 'State Of Grace (Acoustic Version)' },
+            { id: 'Ronan' },
+            { id: 'Better Man' },
+            { id: 'Nothing New' },
+            { id: 'Babe' },
+            { id: 'Message In A Bottle' },
+            { id: 'I Bet You Think About Me' },
+            { id: 'Forever Winter' },
+            { id: 'Run' },
+            { id: 'The Very First Night' },
+            { id: 'All Too Well (10 Minute Version)' },
+            { id: 'Welcome to New York' },
+            { id: 'Blank Space' },
+            { id: 'Style' },
+            { id: 'All You Had to Do Was Stay' },
+            { id: 'Shake It Off' },
+            { id: 'I Wish You Would' },
+            { id: 'Bad Blood' },
+            { id: 'Wildest Dreams' },
+            { id: 'How You Get The Girl' },
+            { id: 'This Love' },
+            { id: 'I Know Places' },
+            { id: 'Clean' },
+            { id: 'Wonderland' },
+            { id: 'You Are In Love' },
+            { id: 'New Romantics' },
+            { id: '...Ready for It?' },
+            { id: 'End Game' },
+            { id: 'I Did Something Bad' },
+            { id: 'Don\'t Blame Me' },
+            { id: 'Delicate' },
+            { id: 'Look What You Made Me Do' },
+            { id: 'So It Goes...' },
+            { id: 'Gorgeous' },
+            { id: 'Getaway Car' },
+            { id: 'King of My Heart' },
+            { id: 'Dancing with Our Hands Tied' },
+            { id: 'Dress' },
+            { id: 'This Is Why We Can\'t Have Nice Things' },
+            { id: 'Call It What You Want' },
+            { id: 'New Year\'s Day' },
+            { id: 'I Forgot That You Existed' },
+            { id: 'Cruel Summer' },
+            { id: 'Lover' },
+            { id: 'The Man' },
+            { id: 'The Archer' },
+            { id: 'I Think He Knows' },
+            { id: 'Miss Americana & The Heartbreak Prince' },
+            { id: 'Paper Rings' },
+            { id: 'Cornelia Street' },
+            { id: 'Death by a Thousand Cuts' },
+            { id: 'London Boy' },
+            { id: 'Soon You\'ll Get Better' },
+            { id: 'False God' },
+            { id: 'You Need To Calm Down' },
+            { id: 'Afterglow' },
+            { id: 'Me!' },
+            { id: 'It\'s Nice To Have A Friend' },
+            { id: 'Daylight' },
+            { id: 'the 1' },
+            { id: 'cardigan' },
+            { id: 'the last great american dynasty' },
+            { id: 'exile' },
+            { id: 'my tears ricochet' },
+            { id: 'mirrorball' },
+            { id: 'seven' },
+            { id: 'august' },
+            { id: 'this is me trying' },
+            { id: 'illicit affairs' },
+            { id: 'invisible string' },
+            { id: 'mad woman' },
+            { id: 'epiphany' },
+            { id: 'betty' },
+            { id: 'peace' },
+            { id: 'hoax' },
+            { id: 'the lakes' },
+            { id: 'willow' },
+            { id: 'champagne problems' },
+            { id: 'gold rush' },
+            { id: 'tis the damn season' },
+            { id: 'tolerate it' },
+            { id: 'no body, no crime' },
+            { id: 'happiness' },
+            { id: 'dorothea' },
+            { id: 'coney island' },
+            { id: 'ivy' },
+            { id: 'cowboy like me' },
+            { id: 'long story short' },
+            { id: 'marjorie' },
+            { id: 'closure' },
+            { id: 'evermore' },
+            { id: 'right where you left me' },
+            { id: 'it\'s time to go' },
+            { id: 'Lavender Haze' },
+            { id: 'Maroon' },
+            { id: 'Anti-Hero' },
+            { id: 'Snow On The Beach' },
+            { id: 'You\'re On Your Own, Kid' },
+            { id: 'Midnight Rain' },
+            { id: 'Question...?' },
+            { id: 'Vigilante Shit' },
+            { id: 'Bejeweled' },
+            { id: 'Labyrinth' },
+            { id: 'Karma' },
+            { id: 'Sweet Nothing' },
+            { id: 'Mastermind' },
+            { id: 'The Great War' },
+            { id: 'Bigger Than The Whole Sky' },
+            { id: 'Paris' },
+            { id: 'High Infidelity' },
+            { id: 'Glitch' },
+            { id: 'Would\'ve, Could\'ve, Should\'ve' },
+            { id: 'Dear Reader' },
+            { id: 'Hits Different' },
+        ];
+
+        var myPicker = new picker.Picker({
+            items: items,
+            localStorageKey: 'picker-state',
+            defaultSettings: {
+                minBatchSize: 10,
+                maxBatchSize: 10
+            }
+        });
+
+        var pickerUI = new PickerUI(myPicker, {
+            elements: {
+                pick: "#pick",
+                pass: "#pass",
+                undo: "#undo",
+                redo: "#redo",
+                evaluating: "#evaluating",
+                favorites: "#favorites"
+            }
+        });
+
+        pickerUI.initialize();
+
+        /* Sortable favorites - you can safely remove this, and the Sortable.min.js script, if you don't want to be able to sort your favorite list. */
+        var sortable = new Sortable(pickerUI.elem.favorites.get(0), {
+            draggable: '.item',
+            animation: 100,
+            onStart: function () {
+                pickerUI.elem.favorites.addClass("sorting");
+            },
+            onEnd: function () {
+                pickerUI.elem.favorites.removeClass("sorting");
+            },
+            onUpdate: function () {
+                myPicker.setFavorites(pickerUI.elem.favorites.children().map(function () {
+                    return pickerUI.getItem(this);
+                }).get());
+                pickerUI.update(true);
+            }
+        });
+/* End sortable favorites */
+    </script>
+</body>
+
+</html>
